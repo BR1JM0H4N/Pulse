@@ -1,4 +1,4 @@
-const CACHE_NAME = "pulse-shell-v2";
+const CACHE_NAME = "pulse-shell-v2.5";
 const FEED_CACHE = "pulse-feed-v1";
 const FEED_URL = "https://corsproxy.io/?url=" + encodeURIComponent("https://news.google.com/rss?hl=en-IN&gl=IN&ceid=IN:en");
 
