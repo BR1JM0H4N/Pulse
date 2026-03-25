@@ -276,6 +276,12 @@ gap: 10px;
 align-items: center;
 }
 
+.read-controls {
+display: flex;
+gap: 8px;
+align-items: center;
+}
+
 /* Toggle */
 .toggle-wrap {
 display: flex;
@@ -364,6 +370,110 @@ transform: scale(1);
 } 50%{opacity: .4;
 transform: scale(0.7);
 } }
+
+.tts-settings-btn {
+width: 36px;
+height: 36px;
+}
+
+/* ── TTS speed modal ── */
+.modal-backdrop {
+position: fixed;
+inset: 0;
+background: rgba(5,5,12,0.66);
+backdrop-filter: blur(6px);
+-webkit-backdrop-filter: blur(6px);
+display: none;
+align-items: center;
+justify-content: center;
+padding: 20px;
+z-index: 300;
+}
+
+.modal-backdrop.open { display: flex; }
+
+.modal-card {
+width: min(430px, 100%);
+background: linear-gradient(145deg, #141426, #101021);
+border: 1px solid var(--border);
+border-radius: 16px;
+box-shadow: 0 26px 60px rgba(0,0,0,.45);
+padding: 18px;
+}
+
+.modal-head {
+display: flex;
+justify-content: space-between;
+gap: 10px;
+align-items: center;
+margin-bottom: 12px;
+}
+
+.modal-head h3 {
+font-family: 'Syne', sans-serif;
+font-size: 16px;
+letter-spacing: 0.3px;
+}
+
+.modal-close {
+border: 1px solid var(--border);
+background: var(--subtle);
+color: var(--muted);
+border-radius: 9px;
+width: 32px;
+height: 32px;
+display: grid;
+place-items: center;
+cursor: pointer;
+}
+
+.modal-copy {
+font-size: 13px;
+line-height: 1.6;
+color: var(--muted);
+margin-bottom: 14px;
+}
+
+.speed-row {
+display: flex;
+align-items: center;
+justify-content: space-between;
+gap: 10px;
+margin-bottom: 8px;
+}
+
+.speed-value {
+font-size: 12px;
+font-weight: 700;
+letter-spacing: .3px;
+background: rgba(230,57,70,0.12);
+color: #ff9ca3;
+padding: 4px 8px;
+border: 1px solid rgba(230,57,70,0.25);
+border-radius: 999px;
+}
+
+#speedRange {
+width: 100%;
+accent-color: var(--accent);
+}
+
+.modal-foot {
+margin-top: 14px;
+display: flex;
+justify-content: flex-end;
+}
+
+.modal-cta {
+background: var(--accent);
+color: #fff;
+border: none;
+border-radius: 9px;
+padding: 8px 14px;
+font-size: 12.5px;
+font-weight: 600;
+cursor: pointer;
+}
 
 /* ── Skeletons ── */
 .skeleton-list { display: flex;
@@ -699,6 +809,7 @@ border-radius: 10px;
 </div>
 <span class="toggle-label">Headlines only</span>
 </label>
+<div class="read-controls">
 <button class="read-btn" id="readAloudButton">
 <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
@@ -707,6 +818,13 @@ border-radius: 10px;
 </svg>
 Read Aloud
 </button>
+<button class="icon-btn tts-settings-btn" id="ttsSettingsBtn" title="Read aloud settings" aria-label="Read aloud settings">
+<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="3"></circle>
+<path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06A2 2 0 1 1 7.04 3.4l.06.06a1.65 1.65 0 0 0 1.82.33h.09a1.65 1.65 0 0 0 1-1.51V2a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.09a1.65 1.65 0 0 0 1.51 1H22a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+</svg>
+</button>
+</div>
 </div>
 </div>
 
@@ -737,6 +855,24 @@ Read Aloud
 </div>
 </main>
 
+<div class="modal-backdrop" id="speedModal" aria-hidden="true">
+<div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="speedModalTitle">
+<div class="modal-head">
+<h3 id="speedModalTitle">Read Aloud Speed</h3>
+<button class="modal-close" id="closeSpeedModal" aria-label="Close speed settings">✕</button>
+</div>
+<p class="modal-copy">Tune the narration rate for your current session. A lower value is slower and clearer, while higher values read faster.</p>
+<div class="speed-row">
+<span class="toggle-label">Speech rate</span>
+<span class="speed-value" id="speedValue">1.5×</span>
+</div>
+<input type="range" id="speedRange" min="0.7" max="2" step="0.1" value="1.5" />
+<div class="modal-foot">
+<button class="modal-cta" id="saveSpeedBtn">Done</button>
+</div>
+</div>
+</div>
+
 <footer>
 <span>Powered by Google News RSS &nbsp;·&nbsp; Updated automatically</span>
 </footer>
@@ -752,10 +888,21 @@ const installBtn = document.getElementById("installBtn");
 const storyCount = document.getElementById("storyCount");
 const tickerText = document.getElementById("tickerText");
 const skeletonList = document.getElementById("skeletonList");
+const ttsSettingsBtn = document.getElementById("ttsSettingsBtn");
+const speedModal = document.getElementById("speedModal");
+const closeSpeedModal = document.getElementById("closeSpeedModal");
+const saveSpeedBtn = document.getElementById("saveSpeedBtn");
+const speedRange = document.getElementById("speedRange");
+const speedValue = document.getElementById("speedValue");
 
 let allCards = [];
 let isSpeaking = false;
 let installPromptEvent = null;
+let speechRate = Number(localStorage.getItem("pulse_tts_rate") || 1.5);
+if (Number.isNaN(speechRate) || speechRate < 0.7 || speechRate > 2) speechRate = 1.5;
+
+speedRange.value = String(speechRate);
+speedValue.textContent = `${speechRate.toFixed(1)}×`;
 
 /* ── Relative time ── */
 function timeAgo(date) {
@@ -922,6 +1069,16 @@ if (m < 60) return `${m}m ago`;
 return `${Math.floor(m / 60)}h ago`;
 }
 
+function openSpeedModal() {
+speedModal.classList.add("open");
+speedModal.setAttribute("aria-hidden", "false");
+}
+
+function closeModal() {
+speedModal.classList.remove("open");
+speedModal.setAttribute("aria-hidden", "true");
+}
+
 /* ── Load RSS — cache-first, corsproxy.io only ── */
 async function loadRSS(url, forceRefresh = false) {
 refreshBtn.classList.add("spinning");
@@ -1037,6 +1194,22 @@ storyCount.textContent = "";
 loadRSS(feedUrl, true);
 });
 
+speedRange.addEventListener("input", () => {
+speechRate = Number(speedRange.value);
+speedValue.textContent = `${speechRate.toFixed(1)}×`;
+localStorage.setItem("pulse_tts_rate", String(speechRate));
+});
+
+ttsSettingsBtn.addEventListener("click", openSpeedModal);
+closeSpeedModal.addEventListener("click", closeModal);
+saveSpeedBtn.addEventListener("click", closeModal);
+speedModal.addEventListener("click", (e) => {
+if (e.target === speedModal) closeModal();
+});
+window.addEventListener("keydown", (e) => {
+if (e.key === "Escape" && speedModal.classList.contains("open")) closeModal();
+});
+
 /* ── Read Aloud ── */
 readBtn.addEventListener("click", () => {
 if (isSpeaking) {
@@ -1063,7 +1236,7 @@ return headlinesCb.checked ? title: `${title}. ${content}`;
 
 const utt = new SpeechSynthesisUtterance(text);
 utt.lang = "en-US";
-utt.rate = 1.5;
+utt.rate = speechRate;
 utt.onend = () => {
 isSpeaking = false;
 readBtn.innerHTML = `
