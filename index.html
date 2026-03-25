@@ -1,9 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+<meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Pulse — News Reader</title>
+<meta name="theme-color" content="#08080f" />
+<meta name="description" content="Pulse is a fast news reader with offline support and installable PWA features." />
+<link rel="manifest" href="./manifest.webmanifest" />
+<link rel="apple-touch-icon" href="./icon-192.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
 
@@ -147,6 +151,9 @@ pointer-events: none;
 .header-actions { display: flex;
 gap: 8px;
 }
+
+#installBtn { display: none; }
+#installBtn.show { display: grid; }
 
 .icon-btn {
 width: 38px;
@@ -649,6 +656,13 @@ border-radius: 10px;
 </div>
 
 <div class="header-actions">
+<button class="icon-btn" id="installBtn" title="Install Pulse">
+<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M12 3v12" />
+<path d="m7 10 5 5 5-5" />
+<path d="M5 21h14" />
+</svg>
+</button>
 <button class="icon-btn" id="refreshBtn" title="Refresh feed">
 <svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
 <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" />
@@ -734,12 +748,14 @@ const readBtn = document.getElementById("readAloudButton");
 const headlinesCb = document.getElementById("onlyHeadlines");
 const searchInput = document.getElementById("searchInput");
 const refreshBtn = document.getElementById("refreshBtn");
+const installBtn = document.getElementById("installBtn");
 const storyCount = document.getElementById("storyCount");
 const tickerText = document.getElementById("tickerText");
 const skeletonList = document.getElementById("skeletonList");
 
 let allCards = [];
 let isSpeaking = false;
+let installPromptEvent = null;
 
 /* ── Relative time ── */
 function timeAgo(date) {
@@ -958,6 +974,48 @@ refreshBtn.classList.remove("spinning");
 }
 }
 
+/* ── PWA install + background sync ── */
+function setupInstallPrompt() {
+window.addEventListener("beforeinstallprompt", (e) => {
+e.preventDefault();
+installPromptEvent = e;
+installBtn.classList.add("show");
+});
+
+installBtn.addEventListener("click", async () => {
+if (!installPromptEvent) return;
+installPromptEvent.prompt();
+await installPromptEvent.userChoice;
+installPromptEvent = null;
+installBtn.classList.remove("show");
+});
+
+window.addEventListener("appinstalled", () => {
+installPromptEvent = null;
+installBtn.classList.remove("show");
+});
+}
+
+async function registerServiceWorker() {
+if (!("serviceWorker" in navigator)) return;
+try {
+const reg = await navigator.serviceWorker.register("./sw.js");
+if ("sync" in reg) {
+await reg.sync.register("pulse-feed-sync");
+}
+window.addEventListener("online", async () => {
+try {
+const activeReg = await navigator.serviceWorker.ready;
+if ("sync" in activeReg) {
+await activeReg.sync.register("pulse-feed-sync");
+}
+} catch (_) {}
+});
+} catch (e) {
+console.warn("Service worker registration failed:", e.message);
+}
+}
+
 /* ── Search filter ── */
 searchInput.addEventListener("input", () => {
 const q = searchInput.value.toLowerCase().trim();
@@ -1023,6 +1081,8 @@ readBtn.classList.add("speaking");
 window.speechSynthesis.speak(utt);
 });
 
+setupInstallPrompt();
+registerServiceWorker();
 loadRSS(feedUrl, false); // on page load — use cache if fresh
 </script>
 </body>
