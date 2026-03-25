@@ -1,5 +1,5 @@
 <div align="center">
-
+<img src="icon-512.png" width="72" height="72" alt="logo"/>
 # ⚡ Pulse
 ### Modern Google News Reader PWA
 
