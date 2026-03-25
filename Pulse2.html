@@ -1,0 +1,1029 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pulse — News Reader</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+
+<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+<script>
+eruda.init();
+</script>
+
+<style>
+:root {
+--bg: #08080f;
+--surface: #0f0f1c;
+--card: #11111f;
+--card-hover: #161629;
+--border: rgba(255,255,255,0.07);
+--accent: #e63946;
+--accent2: #ff6b6b;
+--blue: #4cc9f0;
+--text: #eeeef4;
+--muted: #7070a0;
+--subtle: rgba(255,255,255,0.04);
+}
+
+*, *::before, *::after { margin: 0;
+padding: 0;
+box-sizing: border-box;
+}
+
+html { scroll-behavior: smooth;
+}
+
+body {
+font-family: 'Plus Jakarta Sans', sans-serif;
+background: var(--bg);
+color: var(--text);
+min-height: 100vh;
+-webkit-font-smoothing: antialiased;
+}
+
+/* ── Noise overlay for depth ── */
+body::before {
+content: '';
+position: fixed;
+inset: 0;
+background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+background-size: 200px 200px;
+pointer-events: none;
+z-index: 0;
+}
+
+/* ── Header ── */
+.header {
+position: sticky;
+top: 0;
+z-index: 100;
+background: rgba(8,8,15,0.85);
+backdrop-filter: blur(20px);
+-webkit-backdrop-filter: blur(20px);
+border-bottom: 1px solid var(--border);
+padding: 0 clamp(16px, 4vw, 48px);
+}
+
+.header-inner {
+max-width: 860px;
+margin: 0 auto;
+height: 64px;
+display: flex;
+align-items: center;
+gap: 16px;
+}
+
+.logo {
+display: flex;
+align-items: center;
+gap: 10px;
+text-decoration: none;
+flex-shrink: 0;
+}
+
+.logo-icon {
+width: 34px;
+height: 34px;
+background: var(--accent);
+border-radius: 8px;
+display: grid;
+place-items: center;
+}
+
+.logo-icon svg { width: 18px;
+height: 18px;
+fill: #fff;
+}
+
+.logo-text {
+font-family: 'Syne', sans-serif;
+font-weight: 800;
+font-size: 22px;
+color: var(--text);
+letter-spacing: -0.5px;
+}
+
+.logo-text span { color: var(--accent);
+}
+
+.header-search {
+flex: 1;
+position: relative;
+}
+
+.header-search input {
+width: 100%;
+background: var(--subtle);
+border: 1px solid var(--border);
+border-radius: 10px;
+color: var(--text);
+font-family: 'Plus Jakarta Sans', sans-serif;
+font-size: 13.5px;
+padding: 9px 14px 9px 38px;
+outline: none;
+transition: border-color .2s, background .2s;
+}
+
+.header-search input::placeholder { color: var(--muted);
+}
+.header-search input:focus {
+border-color: rgba(230,57,70,0.4);
+background: rgba(255,255,255,0.05);
+}
+
+.header-search svg {
+position: absolute;
+left: 12px;
+top: 50%;
+transform: translateY(-50%);
+width: 15px;
+height: 15px;
+stroke: var(--muted);
+pointer-events: none;
+}
+
+.header-actions { display: flex;
+gap: 8px;
+}
+
+.icon-btn {
+width: 38px;
+height: 38px;
+border-radius: 10px;
+border: 1px solid var(--border);
+background: var(--subtle);
+color: var(--muted);
+cursor: pointer;
+display: grid;
+place-items: center;
+transition: all .2s;
+flex-shrink: 0;
+}
+
+.icon-btn:hover { background: var(--card-hover);
+color: var(--text);
+border-color: rgba(255,255,255,0.14);
+}
+.icon-btn svg { width: 16px;
+height: 16px;
+stroke: currentColor;
+fill: none;
+}
+
+.icon-btn.spinning svg { animation: spin 1s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg);
+} }
+
+/* ── Ticker bar ── */
+.ticker-bar {
+background: var(--accent);
+padding: 7px clamp(16px, 4vw, 48px);
+overflow: hidden;
+}
+.ticker-inner {
+max-width: 860px;
+margin: 0 auto;
+display: flex;
+align-items: center;
+gap: 14px;
+}
+.ticker-label {
+font-family: 'Syne', sans-serif;
+font-size: 11px;
+font-weight: 700;
+letter-spacing: 2px;
+color: #fff;
+white-space: nowrap;
+flex-shrink: 0;
+}
+.ticker-divider { width: 1px;
+height: 14px;
+background: rgba(255,255,255,0.4);
+flex-shrink: 0;
+}
+.ticker-scroll { overflow: hidden;
+flex: 1;
+}
+.ticker-text {
+font-size: 12.5px;
+color: rgba(255,255,255,0.88);
+white-space: nowrap;
+animation: ticker 30s linear infinite;
+display: inline-block;
+}
+@keyframes ticker { 0% { transform: translateX(100%);
+} 100% { transform: translateX(-100%);
+} }
+
+/* ── Main layout ── */
+.main {
+max-width: 860px;
+margin: 0 auto;
+padding: clamp(24px, 4vw, 48px) clamp(16px, 4vw, 48px);
+position: relative;
+z-index: 1;
+}
+
+/* ── Controls bar ── */
+.controls-bar {
+display: flex;
+align-items: center;
+justify-content: space-between;
+flex-wrap: wrap;
+gap: 12px;
+margin-bottom: 28px;
+padding-bottom: 20px;
+border-bottom: 1px solid var(--border);
+}
+
+.section-label {
+display: flex;
+align-items: center;
+gap: 10px;
+}
+
+.section-label span {
+font-family: 'Syne', sans-serif;
+font-size: 11px;
+font-weight: 700;
+letter-spacing: 2.5px;
+color: var(--muted);
+text-transform: uppercase;
+}
+
+#storyCount {
+background: var(--subtle);
+border: 1px solid var(--border);
+border-radius: 100px;
+font-size: 11px;
+color: var(--muted);
+padding: 2px 8px;
+}
+
+.controls-right { display: flex;
+gap: 10px;
+align-items: center;
+}
+
+/* Toggle */
+.toggle-wrap {
+display: flex;
+align-items: center;
+gap: 8px;
+cursor: pointer;
+}
+.toggle-wrap input { display: none;
+}
+.toggle-track {
+width: 36px;
+height: 20px;
+background: var(--subtle);
+border: 1px solid var(--border);
+border-radius: 100px;
+position: relative;
+transition: background .2s, border-color .2s;
+}
+.toggle-wrap input:checked ~ .toggle-track {
+background: var(--accent);
+border-color: var(--accent);
+}
+.toggle-thumb {
+position: absolute;
+width: 14px;
+height: 14px;
+background: var(--muted);
+border-radius: 50%;
+top: 2px;
+left: 2px;
+transition: transform .2s, background .2s;
+}
+.toggle-wrap input:checked ~ .toggle-track .toggle-thumb {
+transform: translateX(16px);
+background: #fff;
+}
+.toggle-label {
+font-size: 12.5px;
+color: var(--muted);
+white-space: nowrap;
+}
+
+/* Read Aloud button */
+.read-btn {
+display: flex;
+align-items: center;
+gap: 7px;
+background: var(--accent);
+color: #fff;
+border: none;
+border-radius: 10px;
+padding: 9px 16px;
+font-family: 'Plus Jakarta Sans', sans-serif;
+font-size: 13px;
+font-weight: 600;
+cursor: pointer;
+transition: all .2s;
+white-space: nowrap;
+}
+.read-btn svg { width: 14px;
+height: 14px;
+stroke: #fff;
+fill: none;
+flex-shrink: 0;
+}
+.read-btn:hover { background: var(--accent2);
+transform: translateY(-1px);
+}
+.read-btn:active { transform: scale(0.97);
+}
+.read-btn.speaking {
+background: #2a2a3a;
+border: 1px solid var(--border);
+}
+.read-btn.speaking .pulse-dot {
+width: 8px;
+height: 8px;
+border-radius: 50%;
+background: var(--accent);
+animation: pulse 1.2s ease-in-out infinite;
+display: inline-block;
+flex-shrink: 0;
+}
+@keyframes pulse { 0%,100%{opacity: 1;
+transform: scale(1);
+} 50%{opacity: .4;
+transform: scale(0.7);
+} }
+
+/* ── Skeletons ── */
+.skeleton-list { display: flex;
+flex-direction: column;
+gap: 12px;
+}
+
+.skeleton-card {
+background: var(--card);
+border: 1px solid var(--border);
+border-radius: 14px;
+padding: 22px 24px;
+overflow: hidden;
+}
+
+.skel {
+background: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%);
+background-size: 400% 100%;
+border-radius: 6px;
+animation: shimmer 1.6s ease-in-out infinite;
+}
+
+@keyframes shimmer { 0%{background-position: 100% 0} 100%{background-position: -100% 0} }
+
+.skel-title { height: 22px;
+margin-bottom: 10px;
+border-radius: 5px;
+}
+.skel-sub { height: 14px;
+width: 55%;
+border-radius: 4px;
+}
+
+/* ── Feed ── */
+#feed { display: flex;
+flex-direction: column;
+gap: 10px;
+}
+
+/* ── Card ── */
+.card {
+background: var(--card);
+border: 1px solid var(--border);
+border-radius: 14px;
+overflow: hidden;
+cursor: pointer;
+transition: border-color .25s, background .25s, transform .2s;
+animation: fadeUp .4s ease both;
+}
+
+@keyframes fadeUp {
+from { opacity: 0;
+transform: translateY(18px);
+}
+to { opacity: 1;
+transform: translateY(0);
+}
+}
+
+.card:hover { background: var(--card-hover);
+border-color: rgba(255,255,255,0.13);
+}
+.card.active { border-color: rgba(230,57,70,0.35);
+background: var(--card-hover);
+}
+
+.card-header {
+display: flex;
+align-items: flex-start;
+gap: 14px;
+padding: 20px 22px;
+}
+
+.card-num {
+font-family: 'Syne', sans-serif;
+font-size: 11px;
+font-weight: 700;
+color: var(--accent);
+min-width: 24px;
+padding-top: 4px;
+opacity: 0.7;
+}
+
+.card-meta-wrap { flex: 1;
+min-width: 0;
+}
+
+.card-source-row {
+display: flex;
+align-items: center;
+gap: 8px;
+margin-bottom: 8px;
+flex-wrap: wrap;
+}
+
+.source-badge {
+font-size: 11px;
+font-weight: 600;
+color: var(--muted);
+letter-spacing: 0.3px;
+white-space: nowrap;
+}
+
+.dot { width: 3px;
+height: 3px;
+border-radius: 50%;
+background: var(--muted);
+opacity: .5;
+}
+
+.time-badge {
+font-size: 11px;
+color: var(--muted);
+}
+
+.card-title {
+font-family: 'Fraunces', serif;
+font-size: clamp(15px, 2.5vw, 17.5px);
+font-weight: 600;
+color: var(--text);
+line-height: 1.45;
+letter-spacing: -0.2px;
+}
+
+.card-chevron {
+flex-shrink: 0;
+width: 28px;
+height: 28px;
+border-radius: 50%;
+background: var(--subtle);
+display: grid;
+place-items: center;
+transition: transform .3s, background .2s;
+margin-top: 2px;
+}
+.card-chevron svg { width: 12px;
+height: 12px;
+stroke: var(--muted);
+fill: none;
+}
+.card.active .card-chevron { transform: rotate(180deg);
+background: rgba(230,57,70,0.15);
+}
+.card.active .card-chevron svg { stroke: var(--accent);
+}
+
+/* ── Card body (expandable) ── */
+.card-body {
+display: grid;
+grid-template-rows: 0fr;
+transition: grid-template-rows .35s cubic-bezier(.4,0,.2,1);
+}
+.card.active .card-body { grid-template-rows: 1fr;
+}
+.card-body-inner { overflow: hidden;
+}
+.card-body-content {
+padding: 0 22px 22px 60px;
+border-top: 1px solid var(--border);
+padding-top: 18px;
+}
+
+.bullet-list {
+list-style: none;
+display: flex;
+flex-direction: column;
+gap: 8px;
+margin-bottom: 18px;
+}
+
+.bullet-list li {
+font-size: 13.5px;
+color: var(--muted);
+line-height: 1.65;
+padding-left: 16px;
+position: relative;
+}
+
+.bullet-list li::before {
+content: '';
+position: absolute;
+left: 0;
+top: 9px;
+width: 5px;
+height: 5px;
+border-radius: 50%;
+background: var(--accent);
+opacity: .6;
+}
+
+.read-more-link {
+display: inline-flex;
+align-items: center;
+gap: 6px;
+font-size: 13px;
+font-weight: 600;
+color: var(--blue);
+text-decoration: none;
+border: 1px solid rgba(76,201,240,0.2);
+border-radius: 8px;
+padding: 7px 14px;
+transition: all .2s;
+}
+.read-more-link:hover { background: rgba(76,201,240,0.08);
+border-color: rgba(76,201,240,0.45);
+}
+.read-more-link svg { width: 13px;
+height: 13px;
+stroke: currentColor;
+fill: none;
+}
+
+/* ── Error ── */
+.error-state {
+text-align: center;
+padding: 60px 20px;
+color: var(--muted);
+}
+.error-icon {
+width: 52px;
+height: 52px;
+border-radius: 50%;
+background: rgba(230,57,70,0.1);
+border: 1px solid rgba(230,57,70,0.2);
+display: grid;
+place-items: center;
+margin: 0 auto 16px;
+}
+.error-icon svg { width: 22px;
+height: 22px;
+stroke: var(--accent);
+fill: none;
+}
+.error-state h3 { font-size: 16px;
+color: var(--text);
+margin-bottom: 8px;
+}
+.error-state p { font-size: 13.5px;
+line-height: 1.6;
+}
+
+/* ── Footer ── */
+footer {
+text-align: center;
+padding: 28px 16px;
+font-size: 12px;
+color: var(--muted);
+border-top: 1px solid var(--border);
+position: relative;
+z-index: 1;
+}
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px;
+}
+::-webkit-scrollbar-track { background: var(--bg);
+}
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1);
+border-radius: 10px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 520px) {
+.header-search { display: none;
+}
+.card-body-content { padding-left: 22px;
+}
+.card-num { display: none;
+}
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+<div class="header-inner">
+<a href="#" class="logo">
+<div class="logo-icon">
+<svg viewBox="0 0 24 24"><path d="M15 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>
+</div>
+<span class="logo-text">Pulse<span>.</span></span>
+</a>
+
+<div class="header-search">
+<svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" />
+</svg>
+<input type="text" id="searchInput" placeholder="Filter stories…" autocomplete="off" />
+</div>
+
+<div class="header-actions">
+<button class="icon-btn" id="refreshBtn" title="Refresh feed">
+<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" />
+<path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /><path d="M8 16H3v5" />
+</svg>
+</button>
+</div>
+</div>
+</header>
+
+<!-- Ticker -->
+<div class="ticker-bar">
+<div class="ticker-inner">
+<span class="ticker-label">LIVE</span>
+<div class="ticker-divider"></div>
+<div class="ticker-scroll">
+<span class="ticker-text" id="tickerText">Loading latest stories…</span>
+</div>
+</div>
+</div>
+
+<!-- Main -->
+<main class="main">
+<div class="controls-bar">
+<div class="section-label">
+<span>Top Stories</span>
+<span id="storyCount"></span>
+</div>
+<div class="controls-right">
+<label class="toggle-wrap" title="Headlines only">
+<input type="checkbox" id="onlyHeadlines" />
+<div class="toggle-track">
+<div class="toggle-thumb"></div>
+</div>
+<span class="toggle-label">Headlines only</span>
+</label>
+<button class="read-btn" id="readAloudButton">
+<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+<path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+<path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+</svg>
+Read Aloud
+</button>
+</div>
+</div>
+
+<div id="feed">
+<!-- Skeleton loading -->
+<div class="skeleton-list" id="skeletonList">
+<div class="skeleton-card">
+<div class="skel skel-title" style="width:82%"></div>
+<div class="skel skel-sub"></div>
+</div>
+<div class="skeleton-card">
+<div class="skel skel-title" style="width:65%"></div>
+<div class="skel skel-sub" style="width:42%"></div>
+</div>
+<div class="skeleton-card">
+<div class="skel skel-title" style="width:90%"></div>
+<div class="skel skel-sub" style="width:60%"></div>
+</div>
+<div class="skeleton-card">
+<div class="skel skel-title" style="width:73%"></div>
+<div class="skel skel-sub" style="width:50%"></div>
+</div>
+<div class="skeleton-card">
+<div class="skel skel-title" style="width:88%"></div>
+<div class="skel skel-sub" style="width:38%"></div>
+</div>
+</div>
+</div>
+</main>
+
+<footer>
+<span>Powered by Google News RSS &nbsp;·&nbsp; Updated automatically</span>
+</footer>
+
+<script>
+const feedUrl = "https://news.google.com/rss?hl=en-IN&gl=IN&ceid=IN:en";
+const feedEl = document.getElementById("feed");
+const readBtn = document.getElementById("readAloudButton");
+const headlinesCb = document.getElementById("onlyHeadlines");
+const searchInput = document.getElementById("searchInput");
+const refreshBtn = document.getElementById("refreshBtn");
+const storyCount = document.getElementById("storyCount");
+const tickerText = document.getElementById("tickerText");
+const skeletonList = document.getElementById("skeletonList");
+
+let allCards = [];
+let isSpeaking = false;
+
+/* ── Relative time ── */
+function timeAgo(date) {
+const diff = (Date.now() - date.getTime()) / 1000;
+if (diff < 60)    return "just now";
+if (diff < 3600)  return `${Math.floor(diff/60)}m ago`;
+if (diff < 86400) return `${Math.floor(diff/3600)}h ago`;
+return `${Math.floor(diff/86400)}d ago`;
+}
+
+/* ── Source extractor ── */
+function extractSource(title) {
+const match = title.match(/ - ([^-]+)$/);
+if (match) return { clean: title.replace(/ - [^-]+$/, '').trim(), source: match[1].trim() };
+return { clean: title, source: "Google News" };
+}
+
+/* ── Build cards ── */
+function displayFeed(items, cacheAgeMs = 0, isStale = false) {
+document.getElementById("skeletonList")?.remove();
+feedEl.innerHTML = "";
+allCards = [];
+
+const titles = [];
+
+// Update the cache-age badge in controls bar
+const existingBadge = document.getElementById("cacheBadge");
+if (existingBadge) existingBadge.remove();
+const badge = document.createElement("span");
+badge.id = "cacheBadge";
+badge.style.cssText = `font-size:11px; color:var(--muted); padding: 2px 8px;
+background:var(--subtle); border:1px solid var(--border); border-radius:100px;
+${isStale ? "color:#f4a261;": ""}`;
+badge.title = isStale ? "Showing stale cache — network unavailable": "Data freshness";
+badge.textContent = isStale
+? `⚠ stale · ${formatAge(cacheAgeMs)}`: cacheAgeMs < 5000
+? "✦ live": `cached · ${formatAge(cacheAgeMs)}`;
+document.getElementById("storyCount").insertAdjacentElement("afterend", badge);
+
+items.forEach((item, i) => {
+const rawTitle = item.querySelector("title")?.textContent || "Untitled";
+const link = item.querySelector("link")?.textContent || "#";
+const pubDate = new Date(item.querySelector("pubDate")?.textContent);
+const description = item.querySelector("description")?.textContent || "";
+
+const { clean: title, source } = extractSource(rawTitle);
+titles.push(title);
+
+const parser = new DOMParser();
+const parsed = parser.parseFromString(description, "text/html");
+const liNodes = parsed.querySelectorAll("li");
+const bullets = Array.from(liNodes).map(li => li.textContent.trim()).filter(Boolean);
+
+const card = document.createElement("div");
+card.className = "card";
+card.dataset.title = title.toLowerCase();
+card.dataset.source = source.toLowerCase();
+card.style.animationDelay = `${i * 45}ms`;
+
+card.innerHTML = `
+<div class="card-header">
+<span class="card-num">${String(i+1).padStart(2, '0')}</span>
+<div class="card-meta-wrap">
+<div class="card-source-row">
+<span class="source-badge">${escHtml(source)}</span>
+<div class="dot"></div>
+<span class="time-badge">${timeAgo(pubDate)}</span>
+</div>
+<h2 class="card-title">${escHtml(title)}</h2>
+</div>
+<div class="card-chevron">
+<svg viewBox="0 0 24 24" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+<polyline points="6 9 12 15 18 9"/>
+</svg>
+</div>
+</div>
+<div class="card-body">
+<div class="card-body-inner">
+<div class="card-body-content">
+${bullets.length ? `<ul class="bullet-list">${bullets.map(b=>`<li>${escHtml(b)}</li>`).join('')}</ul>`: ''}
+<a class="read-more-link" href="${escHtml(link)}" target="_blank" rel="noopener">
+Full story
+<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/>
+</svg>
+</a>
+</div>
+</div>
+</div>
+`;
+
+card.addEventListener("click", e => {
+if (e.target.closest(".read-more-link")) return;
+card.classList.toggle("active");
+});
+
+feedEl.appendChild(card);
+allCards.push({ card, title, source });
+});
+
+/* Update count + ticker */
+storyCount.textContent = `${items.length} stories`;
+if (titles.length) {
+tickerText.textContent = titles.slice(0, 8).join("  ·  ");
+}
+}
+
+function escHtml(str) {
+return String(str)
+.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+.replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
+
+/* ── Error state ── */
+function showError() {
+skeletonList?.remove();
+feedEl.innerHTML = `
+<div class="error-state">
+<div class="error-icon">
+<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+</svg>
+</div>
+<h3>Couldn't load stories</h3>
+<p>Check your connection and tap Refresh to try again.</p>
+</div>`;
+}
+
+/* ── Cache helpers ── */
+const CACHE_KEY = "pulse_rss_cache";
+const CACHE_TTL = 30 * 60 * 1000; // 30 minutes in ms
+
+function saveCache(xmlText) {
+try {
+localStorage.setItem(CACHE_KEY, JSON.stringify({
+ts: Date.now(),
+xml: xmlText
+}));
+} catch (e) {
+console.warn("Cache write failed:", e.message);
+}
+}
+
+function loadCache() {
+try {
+const raw = localStorage.getItem(CACHE_KEY);
+if (!raw) return null;
+const { ts, xml } = JSON.parse(raw);
+if (Date.now() - ts > CACHE_TTL) return null; // expired
+return { xml, age: Date.now() - ts };
+} catch (e) {
+return null;
+}
+}
+
+function clearCache() {
+try { localStorage.removeItem(CACHE_KEY); } catch (e) {}
+}
+
+function formatAge(ms) {
+const m = Math.floor(ms / 60000);
+if (m < 1)  return "just now";
+if (m < 60) return `${m}m ago`;
+return `${Math.floor(m / 60)}h ago`;
+}
+
+/* ── Load RSS — cache-first, corsproxy.io only ── */
+async function loadRSS(url, forceRefresh = false) {
+refreshBtn.classList.add("spinning");
+
+// Try cache first (unless forced refresh)
+if (!forceRefresh) {
+const cached = loadCache();
+if (cached) {
+const xml = new DOMParser().parseFromString(cached.xml, "text/xml");
+const items = xml.querySelectorAll("item");
+if (items.length) {
+displayFeed(items, cached.age);
+refreshBtn.classList.remove("spinning");
+return;
+}
+}
+}
+
+// Fetch fresh from proxy
+try {
+const proxyUrl = `https://corsproxy.io/?url=${encodeURIComponent(url)}`;
+const resp = await fetch(proxyUrl);
+if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+const text = await resp.text();
+const xml = new DOMParser().parseFromString(text, "text/xml");
+if (xml.querySelector("parsererror")) throw new Error("XML parse error");
+const items = xml.querySelectorAll("item");
+if (!items.length) throw new Error("Empty feed");
+saveCache(text);
+displayFeed(items, 0);
+} catch (err) {
+console.error("Fetch failed:", err.message);
+// Fall back to stale cache if available
+const stale = (() => {
+try {
+const raw = localStorage.getItem(CACHE_KEY);
+if (!raw) return null;
+const { ts, xml } = JSON.parse(raw);
+return { xml, age: Date.now() - ts };
+} catch (e) { return null; }
+})();
+if (stale) {
+const xml = new DOMParser().parseFromString(stale.xml, "text/xml");
+const items = xml.querySelectorAll("item");
+if (items.length) { displayFeed(items, stale.age, true); return; }
+}
+showError();
+} finally {
+refreshBtn.classList.remove("spinning");
+}
+}
+
+/* ── Search filter ── */
+searchInput.addEventListener("input", () => {
+const q = searchInput.value.toLowerCase().trim();
+allCards.forEach(({ card, title, source }) => {
+const match = !q || title.includes(q) || source.includes(q);
+card.style.display = match ? "": "none";
+});
+});
+
+/* ── Refresh (manual — always bypass cache) ── */
+refreshBtn.addEventListener("click", () => {
+clearCache();
+feedEl.innerHTML = `<div class="skeleton-list" id="skeletonList">
+<div class="skeleton-card"><div class="skel skel-title" style="width:82%"></div><div class="skel skel-sub"></div></div>
+<div class="skeleton-card"><div class="skel skel-title" style="width:65%"></div><div class="skel skel-sub" style="width:42%"></div></div>
+<div class="skeleton-card"><div class="skel skel-title" style="width:90%"></div><div class="skel skel-sub" style="width:60%"></div></div>
+</div>`;
+storyCount.textContent = "";
+loadRSS(feedUrl, true);
+});
+
+/* ── Read Aloud ── */
+readBtn.addEventListener("click", () => {
+if (isSpeaking) {
+window.speechSynthesis.cancel();
+isSpeaking = false;
+readBtn.innerHTML = `
+<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+<path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+<path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+</svg> Read Aloud`;
+readBtn.classList.remove("speaking");
+return;
+}
+
+const visible = allCards.filter(({card}) => card.style.display !== "none");
+if (!visible.length) return;
+
+let text = visible.map(({card}) => {
+const title = card.querySelector(".card-title")?.textContent || "";
+const content = card.querySelector(".card-body-content")?.textContent.trim() || "";
+return headlinesCb.checked ? title: `${title}. ${content}`;
+}).join(". Next story. ");
+
+const utt = new SpeechSynthesisUtterance(text);
+utt.lang = "en-US";
+utt.rate = 1.5;
+utt.onend = () => {
+isSpeaking = false;
+readBtn.innerHTML = `
+<svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+<path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+<path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+</svg> Read Aloud`;
+readBtn.classList.remove("speaking");
+};
+
+isSpeaking = true;
+readBtn.innerHTML = `<span class="pulse-dot"></span> Stop Reading`;
+readBtn.classList.add("speaking");
+window.speechSynthesis.speak(utt);
+});
+
+loadRSS(feedUrl, false); // on page load — use cache if fresh
+</script>
+</body>
+</html>
