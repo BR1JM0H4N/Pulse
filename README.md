@@ -1,7 +1,7 @@
 <div align="center">
 <img src="icon-512.png" width="72" height="72" alt="logo"/>
 
-# ⚡ Pulse
+# Pulse
 ### Modern Google News Reader PWA
 
 [![Live Demo](https://img.shields.io/badge/Live-Demo-e63946?style=for-the-badge&logo=google-chrome&logoColor=white)](https://br1jm0h4n.github.io/Pulse/)
